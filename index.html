@@ -2,78 +2,243 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Gilman Upper School Bulletins</title>
+  <title>Gilman Upper School Schedules</title>
   <link rel="icon" href="gilman.png" type="image/x-icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f4f4f4;
+      background: #f9fafb;
       margin: 0;
       padding: 20px;
-    }
-    h1, h2 {
       color: #333;
     }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      color: #222;
+      text-align: center;
+    }
+
     .center {
       text-align: center;
-      margin-top: 100px;
+      margin-top: 30px;
     }
+
     .hidden {
       display: none;
     }
+
     .schedule-toggle {
-      margin-bottom: 20px;
+      margin: 20px 0;
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      flex-wrap: wrap;
     }
+
+    .toggle-btn {
+      padding: 10px 18px;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      cursor: pointer;
+      background: #e0e0e0;
+      transition: background 0.2s;
+    }
+
+    .toggle-btn.active {
+      background: #1f5ba4;
+      color: white;
+    }
+
     .class-list {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 15px;
     }
+
     .class-card {
       background: #fff;
+      border-radius: 12px;
+      padding: 15px 20px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    .class-card strong {
+      font-size: 18px;
+      color: #1a1a1a;
+    }
+
+    .details {
+      margin-top: 10px;
+      background: #f1f5ff;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .details button {
+      display: block;
+      margin: 6px 0;
+      padding: 8px 12px;
+      background: #1f5ba4;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .details button:hover {
+      background: #174782;
+    }
+
+    input[type="password"] {
+      padding: 12px;
+      font-size: 16px;
+      width: 80%;
+      max-width: 250px;
       border: 1px solid #ccc;
-      padding: 15px;
+      border-radius: 8px;
+    }
+
+    button.login-btn {
+      padding: 12px 18px;
+      font-size: 16px;
+      background: #1f5ba4;
+      color: white;
+      border: none;
+      border-radius: 8px;
       cursor: pointer;
     }
-    .details {
+
+    button.login-btn:hover {
+      background: #174782;
+    }
+
+    .logo {
+      display: block;
+      margin: 0 auto 15px auto;
+      max-width: 120px;
+    }
+
+    /* Modal Styles */
+    .modal {
       display: none;
-      margin-top: 10px;
-      background: #eef;
-      padding: 10px;
+      position: fixed;
+      z-index: 999;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: rgba(0,0,0,0.6);
     }
-    input[type="password"] {
-      padding: 10px;
-      font-size: 16px;
-      width: 200px;
+
+    .modal-content {
+      position: relative;
+      background: #fff;
+      margin: 40px auto;
+      padding: 0;
+      border-radius: 10px;
+      max-width: 90%;
+      width: 800px;
+      height: 80%;
+      display: flex;
+      flex-direction: column;
     }
-    button {
-      padding: 10px 15px;
+
+    .modal iframe {
+      flex: 1;
+      border: none;
+      border-radius: 0 0 10px 10px;
+    }
+
+    .close-btn {
+      background: #1f5ba4;
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 10px 10px 0 0;
       font-size: 16px;
+      cursor: pointer;
+    }
+
+    /* Mobile optimizations */
+    @media (max-width: 600px) {
+      body {
+        padding: 15px;
+      }
+
+      h1 {
+        font-size: 22px;
+      }
+
+      .class-card {
+        padding: 12px 15px;
+      }
+
+      .class-card strong {
+        font-size: 16px;
+      }
+
+      .details {
+        font-size: 13px;
+        padding: 8px 10px;
+      }
+
+      .details button {
+        font-size: 13px;
+        padding: 7px 10px;
+      }
+
+      .modal-content {
+        width: 95%;
+        height: 75%;
+      }
     }
   </style>
 </head>
 <body>
 
   <!-- Login Page -->
-  <div id="loginPage" class="center">
-    <h1>Gilman Upper School Bulletins</h1>
+  <div id="loginPage" class="center container">
+    <img src="gilman.png" alt="Gilman Logo" class="logo">
+    <h1>Gilman Upper School Schedules</h1>
     <p>Enter the password to access:</p>
     <input type="password" id="passwordInput" placeholder="Password">
     <br><br>
-    <button onclick="checkPassword()">Enter</button>
+    <button class="login-btn" onclick="checkPassword()">Enter</button>
     <p id="errorMsg" style="color:red;"></p>
   </div>
 
   <!-- Main Content -->
-  <div id="mainContent" class="hidden">
+  <div id="mainContent" class="hidden container">
+    <div class="center">
+      <img src="gilman.png" alt="Gilman Logo" class="logo">
+    </div>
     <h1>Daily Schedule</h1>
 
     <div class="schedule-toggle">
-      <label><input type="radio" name="schedule" value="even" checked> Even Day</label>
-      <label><input type="radio" name="schedule" value="odd"> Odd Day</label>
+      <button id="evenBtn" class="toggle-btn active">Even Day</button>
+      <button id="oddBtn" class="toggle-btn">Odd Day</button>
     </div>
 
     <div id="classContainer" class="class-list"></div>
+  </div>
+
+  <!-- Modal for Bulletins -->
+  <div id="bulletinModal" class="modal">
+    <div class="modal-content">
+      <button class="close-btn" onclick="closeModal()">Close</button>
+      <iframe id="bulletinFrame" src=""></iframe>
+    </div>
   </div>
 
   <script>
@@ -113,60 +278,57 @@
         {
           name: "French II: 1",
           info: "Smythe • 1 Even • GA105",
-          bulletins: {
-            "2025-10-01": "https://docs.google.com/document/d/1jMeUCK6rFY9SVi90HQriSPUFVbc9IdzyxyOvDCX7Tx0/edit?tab=t.0",
-          }
+          bulletins: [
+            "https://docs.google.com/document/d/1jMeUCK6rFY9SVi90HQriSPUFVbc9IdzyxyOvDCX7Tx0/edit?tab=t.0"
+          ]
         },
         {
           name: "American Government: 2",
           info: "Smythe • 2 Even • GA101",
-          bulletins: {
-            "2025-10-01": "https://docs.google.com/document/d/1TKueonFe1hm-7_PuLs7eahrl9JlKGjM5w5noZhJF7tE/edit?tab=t.0"
-          }
+          bulletins: [
+            "https://docs.google.com/document/d/1TKueonFe1hm-7_PuLs7eahrl9JlKGjM5w5noZhJF7tE/edit?tab=t.0"
+          ]
         },
         {
           name: "(H) Algebra II: 3",
           info: "Mr. Braverman • 3 Even • GC311",
-          bulletins: {
-            "2025-10-01": "https://gilman.instructure.com/courses/11226"
-          }
+          bulletins: [
+            "https://gilman.instructure.com/courses/11226"
+          ]
         }
       ],
       odd: [
         {
           name: "World Cultures: 1",
           info: "Mr. Incontrera • 1 Odd • GA101",
-          bulletins: {
-            "2025-10-01": "https://docs.google.com/document/d/1RKxhkSGzm92yVowDEix1s-rXrzIQgB819xW9AMaEIfs/edit?tab=t.0"
-          }
+          bulletins: [
+            "https://docs.google.com/document/d/1RKxhkSGzm92yVowDEix1s-rXrzIQgB819xW9AMaEIfs/edit?tab=t.0"
+          ]
         },
         {
           name: "English Nine: 3",
           info: "Mr. Schmick • 2 Odd • GCT18",
-          bulletins: {
-            "2025-10-01": "https://docs.google.com/document/d/1g5E6_hiJRj_On2ugsoUUJsScb6BWnM3RJAiWyL4Hfxc/edit?tab=t.0"
-          }
+          bulletins: [
+            "https://docs.google.com/document/d/1g5E6_hiJRj_On2ugsoUUJsScb6BWnM3RJAiWyL4Hfxc/edit?tab=t.0"
+          ]
         },
         {
           name: "Physics: 1",
           info: "Ms. DiMenna • 3 Odd • GS205",
-          bulletins: {
-            "2025-10-01": "https://docs.google.com/document/d/1G3dTzlkrdNGcqm89QdF8N3gFRfeoV-kSHEG2kJicrrQ/edit?tab=t.0"
-          }
+          bulletins: [
+            "https://docs.google.com/document/d/1G3dTzlkrdNGcqm89QdF8N3gFRfeoV-kSHEG2kJicrrQ/edit?tab=t.0"
+          ]
         }
       ]
     };
 
     const classContainer = document.getElementById("classContainer");
+    const modal = document.getElementById("bulletinModal");
+    const bulletinFrame = document.getElementById("bulletinFrame");
 
     function renderSchedule(dayType) {
       classContainer.innerHTML = '';
       const classes = schedules[dayType];
-
-      const today = new Date();
-      const todayISO = today.toISOString().slice(0, 10); // YYYY-MM-DD
-      const options = { year: 'numeric', month: 'long', day: 'numeric' };
-      const friendlyDate = today.toLocaleDateString(undefined, options); // e.g. October 1, 2025
 
       classes.forEach(cls => {
         const card = document.createElement('div');
@@ -176,32 +338,45 @@
         const details = document.createElement('div');
         details.className = 'details';
 
-        const link = cls.bulletins[todayISO];
-
-        let bulletinHTML = link
-          ? `<a href="${link}" target="_blank">View today's bulletin</a>`
-          : "No bulletin for today.";
+        let bulletinHTML = cls.bulletins.map((link, idx) => 
+          `<button onclick="openModal('${link}')">View Bulletin ${cls.bulletins.length > 1 ? idx+1 : ''}</button>`
+        ).join("");
 
         details.innerHTML = `
           <p><strong>Info:</strong> ${cls.info}</p>
-          <p><strong>Bulletin (${friendlyDate}):</strong> ${bulletinHTML}</p>
+          <p><strong>Daily Bulletin:</strong><br>${bulletinHTML}</p>
         `;
 
         card.appendChild(details);
-        card.addEventListener('click', () => {
-          details.style.display = details.style.display === 'block' ? 'none' : 'block';
-        });
-
         classContainer.appendChild(card);
       });
+
+      // Update button active state
+      document.getElementById("evenBtn").classList.toggle("active", dayType === "even");
+      document.getElementById("oddBtn").classList.toggle("active", dayType === "odd");
     }
 
-    // Listen for schedule toggle
-    document.querySelectorAll('input[name="schedule"]').forEach(radio => {
-      radio.addEventListener('change', () => {
-        renderSchedule(radio.value);
-      });
-    });
+    // Switch buttons
+    document.getElementById("evenBtn").addEventListener("click", () => renderSchedule("even"));
+    document.getElementById("oddBtn").addEventListener("click", () => renderSchedule("odd"));
+
+    // Modal functions
+    function openModal(link) {
+      bulletinFrame.src = link;
+      modal.style.display = "block";
+    }
+
+    function closeModal() {
+      modal.style.display = "none";
+      bulletinFrame.src = ""; // Clear iframe
+    }
+
+    // Close modal if clicking outside content
+    window.onclick = function(event) {
+      if (event.target === modal) {
+        closeModal();
+      }
+    }
   </script>
 
 </body>

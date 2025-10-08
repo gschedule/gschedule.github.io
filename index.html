@@ -128,7 +128,6 @@
       max-width: 120px;
     }
 
-    /* Modal Styles */
     .modal {
       display: none;
       position: fixed;
@@ -170,7 +169,6 @@
       cursor: pointer;
     }
 
-    /* Mobile optimizations */
     @media (max-width: 600px) {
       body {
         padding: 15px;
@@ -246,12 +244,11 @@
   </div>
 
   <script>
-    const correctPassword = "gilman2025"; // 🔒 Change this password!
+    const correctPassword = "gilman2025";
 
     const passwordInput = document.getElementById("passwordInput");
     const errorMsg = document.getElementById("errorMsg");
 
-    // Allow Enter key to submit password
     passwordInput.addEventListener("keydown", function (e) {
       if (e.key === "Enter") {
         checkPassword();
@@ -264,7 +261,7 @@
       if (input === correctPassword) {
         document.getElementById("loginPage").style.display = "none";
         document.getElementById("mainContent").style.display = "block";
-        renderSchedule('even'); // Default view
+        renderSchedule('even');
       } else {
         errorMsg.textContent = "Incorrect password. Try again.";
         passwordInput.value = "";
@@ -272,7 +269,6 @@
       }
     }
 
-    // Auto-focus password input on load
     window.onload = () => {
       passwordInput.focus();
     };
@@ -283,7 +279,7 @@
           name: "French II: 1",
           info: "Smythe • 1 Even • GA105",
           bulletins: [
-            "https://docs.google.com/document/d/1jMeUCK6rFY9SVi90HQriSPUFVbc9IdzyxyOvDCX7Tx0/edit?tab=t.0"
+            "https://docs.google.com/document/d/1yueIhdcsIYmzFv1YnHYtj-gxamNgVB1k1D_8iG0JN4s/edit?tab=t.0"
           ]
         },
         {
@@ -355,16 +351,13 @@
         classContainer.appendChild(card);
       });
 
-      // Update button active state
       document.getElementById("evenBtn").classList.toggle("active", dayType === "even");
       document.getElementById("oddBtn").classList.toggle("active", dayType === "odd");
     }
 
-    // Switch buttons
     document.getElementById("evenBtn").addEventListener("click", () => renderSchedule("even"));
     document.getElementById("oddBtn").addEventListener("click", () => renderSchedule("odd"));
 
-    // Modal functions
     function openModal(link) {
       bulletinFrame.src = link;
       modal.style.display = "block";
@@ -372,10 +365,9 @@
 
     function closeModal() {
       modal.style.display = "none";
-      bulletinFrame.src = ""; // Clear iframe
+      bulletinFrame.src = "";
     }
 
-    // Close modal if clicking outside content
     window.onclick = function(event) {
       if (event.target === modal) {
         closeModal();

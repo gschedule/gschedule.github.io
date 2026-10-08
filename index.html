@@ -33,6 +33,7 @@
     .error { min-height:1.4em; color:#a52222 }
     .topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px }
     .topbar h1 { margin:0 }
+    .backup-button { position:fixed; top:16px; right:16px; z-index:4; box-shadow:0 2px 8px #17253630 }
     .day-switch { display:flex; justify-content:center; gap:10px; margin:20px 0 }
     .day-switch button { background:#e1e7ee; color:#29394c }
     .day-switch button.active { background:var(--blue); color:white }
@@ -87,10 +88,10 @@
     </section>
 
     <section id="appView" class="hidden">
+      <button id="saveBackup" class="backup-button" type="button">Save backup</button>
       <div class="topbar">
         <h1>Daily Schedule</h1>
         <div class="actions">
-          <button id="saveBackup" type="button">Save backup</button>
           <button id="editSchedule" class="secondary hidden" type="button">Edit pasted schedule</button>
           <button id="signOut" class="secondary" type="button">Sign out</button>
         </div>
@@ -410,8 +411,11 @@
     }
 
     function getBulletinUrl(value) {
-      const match = (value || '').match(/https?:\/\/[^\s<>]+/i);
-      return match ? match[0].replace(/[),.;]+$/, '') : '';
+      const text = (value || '').replace(/[*`]/g, '').trim();
+      const match = text.match(/(?:https?:\/\/|www\.)[^\s<>]+|(?:[a-z0-9-]+\.)+[a-z]{2,}(?:\/[^\s<>]*)?/i);
+      if (!match) return '';
+      const url = match[0].replace(/[),.;]+$/, '');
+      return /^https?:\/\//i.test(url) ? url : `https://${url}`;
     }
 
     function updateScheduleView() {
@@ -535,7 +539,7 @@
       renderSchedule();
     });
 
-    setMode(false);
+    setMode(true);
     chooseImportDay('even');
   </script>
 </body>

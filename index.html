@@ -77,6 +77,12 @@
           <div id="authError" class="error" role="alert"></div>
         </form>
         <p class="notice"><span id="modePrompt">Already set up on this browser?</span> <button id="modeToggle" class="text" type="button">Sign in</button></p>
+        <hr style="border:0;border-top:1px solid var(--line);margin:20px 0">
+        <h2>Restore a backup</h2>
+        <p class="notice">Choose a backup file you previously downloaded to restore your username, sign-in data, schedules, and bulletins on this browser.</p>
+        <label class="field" for="backupFile">Backup file<input id="backupFile" type="file" accept=".json,application/json"></label>
+        <button id="importBackup" class="secondary" type="button">Import backup file</button>
+        <p id="backupMessage" class="error" role="status"></p>
       </div>
     </section>
 
@@ -84,6 +90,7 @@
       <div class="topbar">
         <h1>Daily Schedule</h1>
         <div class="actions">
+          <button id="saveBackup" type="button">Save backup</button>
           <button id="editSchedule" class="secondary hidden" type="button">Edit pasted schedule</button>
           <button id="signOut" class="secondary" type="button">Sign out</button>
         </div>
@@ -102,7 +109,10 @@
         <p id="importError" class="error" role="alert"></p>
       </section>
       <div id="scheduleArea" class="hidden">
-        <div class="day-switch" role="group" aria-label="Choose schedule day"><button id="evenBtn" type="button">Even day</button><button id="oddBtn" type="button">Odd day</button></div>
+        <div class="day-switch" role="group" aria-label="Choose schedule day">
+          <button id="evenBtn" type="button">Even day</button>
+          <button id="oddBtn" type="button">Odd day</button>
+        </div>
         <div id="classContainer" class="class-list"></div>
       </div>
     </section>
@@ -110,12 +120,19 @@
 
   <div id="bulletinModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <div class="modal-card">
-      <div class="modal-head"><h2 id="modalTitle">Class bulletin</h2><button id="closeModal" class="secondary" type="button">Close</button></div>
+      <div class="modal-head">
+        <h2 id="modalTitle">Class bulletin</h2>
+        <button id="closeModal" class="secondary" type="button">Close</button>
+      </div>
       <label class="field" for="bulletinText">Bulletin text or link</label>
       <textarea id="bulletinText" style="min-height:150px" placeholder="Add the bulletin or paste a link"></textarea>
-      <div class="actions"><button id="saveBulletin" type="button">Save bulletin</button><button id="deleteBulletin" class="secondary" type="button">Remove bulletin</button></div>
+      <div class="actions">
+        <button id="saveBulletin" type="button">Save bulletin</button>
+        <button id="deleteBulletin" class="secondary" type="button">Remove bulletin</button>
+      </div>
     </div>
   </div>
+
   <script>
     const STORAGE_KEY = 'gilman-schedules-v1';
     const $ = id => document.getElementById(id);
@@ -127,48 +144,76 @@
     let signingIn = false;
 
     function readStore() {
-      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || { users: {} }; }
-      catch { return { users: {} }; }
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || { users: {} };
+      } catch {
+        return { users: {} };
+      }
     }
-    function persist() { localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }
+
+    function persist() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+    }
+
     function setMode(signIn) {
       signingIn = signIn;
       $('authTitle').textContent = signIn ? 'Sign in' : 'Create your schedule account';
-      $('authDescription').textContent = signIn ? 'Sign in to the schedule account saved in this browser.' : 'Choose a username and a password for this page. Do not enter your Gilman password.';
+      $('authDescription').textContent = signIn
+        ? 'Sign in to the schedule account saved in this browser.'
+        : 'Choose a username and a password for this page. Do not enter your Gilman password.';
       $('authSubmit').textContent = signIn ? 'Sign in' : 'Create account';
       $('confirmWrap').classList.toggle('hidden', signIn);
       $('modePrompt').textContent = signIn ? 'New to this browser?' : 'Already set up on this browser?';
       $('modeToggle').textContent = signIn ? 'Create account' : 'Sign in';
       $('authError').textContent = '';
     }
+
     $('modeToggle').addEventListener('click', () => setMode(!signingIn));
+
     $('authForm').addEventListener('submit', async event => {
       event.preventDefault();
       const name = $('username').value.trim().toLowerCase();
       const password = $('password').value;
       if (!name) return;
+
       let user = db.users[name];
       if (signingIn) {
         const hash = await hashPassword(password, user?.salt);
-        if (!user || hash !== user.passwordHash) { $('authError').textContent = 'That username or password is not recognized on this browser.'; return; }
+        if (!user || hash !== user.passwordHash) {
+          $('authError').textContent = 'That username or password is not recognized on this browser.';
+          return;
+        }
       } else {
-        if (user) { $('authError').textContent = 'An account with that username already exists in this browser. Sign in instead.'; return; }
-        if (password !== $('confirmPassword').value) { $('authError').textContent = 'The passwords do not match.'; return; }
+        if (user) {
+          $('authError').textContent = 'An account with that username already exists in this browser. Sign in instead.';
+          return;
+        }
+        if (password !== $('confirmPassword').value) {
+          $('authError').textContent = 'The passwords do not match.';
+          return;
+        }
         const salt = crypto.randomUUID();
-        user = { salt, passwordHash: await hashPassword(password, salt), schedules: { even: [], odd: [] } };
+        user = {
+          salt,
+          passwordHash: await hashPassword(password, salt),
+          schedules: { even: [], odd: [] }
+        };
         db.users[name] = user;
         persist();
       }
+
       currentUser = name;
       $('authView').classList.add('hidden');
       $('appView').classList.remove('hidden');
       updateScheduleView();
     });
+
     async function hashPassword(value, salt = '') {
       const bytes = new TextEncoder().encode(`${salt}:${value}`);
       const digest = await crypto.subtle.digest('SHA-256', bytes);
       return [...new Uint8Array(digest)].map(n => n.toString(16).padStart(2, '0')).join('');
     }
+
     $('signOut').addEventListener('click', () => {
       currentUser = null;
       $('appView').classList.add('hidden');
@@ -176,18 +221,121 @@
       $('authForm').reset();
     });
 
+    $('saveBackup').addEventListener('click', () => {
+      const account = current();
+      const backup = {
+        format: 'gilman-schedules-backup',
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        account: {
+          username: currentUser,
+          salt: account.salt,
+          passwordHash: account.passwordHash,
+          schedules: account.schedules
+        }
+      };
+
+      const confirmed = window.confirm(
+        'Keep this backup file somewhere safe and do not lose it. It contains your username, password verification data, schedules, and bulletins. Anyone with the file may be able to access the backed-up schedule. Download the backup now?'
+      );
+      if (!confirmed) return;
+
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `gilman-schedule-backup-${currentUser}.json`;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    });
+
+    $('importBackup').addEventListener('click', async () => {
+      const file = $('backupFile').files[0];
+      $('backupMessage').textContent = '';
+      if (!file) {
+        $('backupMessage').textContent = 'Choose a backup JSON file first.';
+        return;
+      }
+
+      try {
+        const backup = JSON.parse(await file.text());
+        const account = backup?.account;
+        const username = typeof account?.username === 'string'
+          ? account.username.trim().toLowerCase()
+          : '';
+        const schedules = account?.schedules;
+
+        const validClasses = list => Array.isArray(list) && list.every(cls =>
+          cls &&
+          typeof cls.id === 'string' &&
+          typeof cls.name === 'string' &&
+          typeof cls.info === 'string' &&
+          typeof cls.bulletin === 'string'
+        );
+
+        if (
+          backup?.format !== 'gilman-schedules-backup' ||
+          backup?.version !== 1 ||
+          !username ||
+          typeof account.salt !== 'string' ||
+          typeof account.passwordHash !== 'string' ||
+          !schedules ||
+          !validClasses(schedules.even) ||
+          !validClasses(schedules.odd)
+        ) {
+          throw new Error('That file is not a valid schedule backup.');
+        }
+
+        if (
+          db.users[username] &&
+          !window.confirm(`An account named “${username}” already exists in this browser. Replace its saved schedule with the backup?`)
+        ) {
+          return;
+        }
+
+        db.users[username] = {
+          salt: account.salt,
+          passwordHash: account.passwordHash,
+          schedules: { even: schedules.even, odd: schedules.odd }
+        };
+        persist();
+
+        $('username').value = username;
+        $('password').value = '';
+        $('confirmPassword').value = '';
+        setMode(true);
+        $('backupMessage').textContent =
+          `Backup restored for ${username}. Sign in with the schedule-page password you used when the backup was made.`;
+        $('backupFile').value = '';
+      } catch (error) {
+        $('backupMessage').textContent = error instanceof SyntaxError
+          ? 'Could not read that file. Choose a valid schedule backup JSON file.'
+          : error.message;
+      }
+    });
+
     function parseClasses(text, dayType) {
       const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
       const isTime = line => /^\d{1,2}:\d{2}\s*(?:am|pm)$/i.test(line);
       const useful = lines.filter(line => !isTime(line) && !/^\|\s*-+\s*\|?$/.test(line));
       const result = [];
+
       for (let i = 0; i < useful.length;) {
         let name = useful[i++].replace(/^\*{1,2}|\*{1,2}$/g, '').trim();
         let info = '';
-        if (i < useful.length && !/^[*_]{1,2}.+/.test(useful[i])) info = useful[i++].replace(/^\*{1,2}|\*{1,2}$/g, '').trim();
+
+        if (i < useful.length && !/^[*_]{1,2}.+/.test(useful[i])) {
+          info = useful[i++].replace(/^\*{1,2}|\*{1,2}$/g, '').trim();
+        }
+
         name = name.replace(/^\*+|\*+$/g, '').trim();
         if (!name) continue;
-        if (info && !new RegExp(`\\b${dayType}\\b`, 'i').test(info)) info = `${info} • ${dayType[0].toUpperCase()}${dayType.slice(1)}`;
+
+        if (info && !new RegExp(`\\b${dayType}\\b`, 'i').test(info)) {
+          info = `${info} • ${dayType[0].toUpperCase()}${dayType.slice(1)}`;
+        }
         result.push({ id: crypto.randomUUID(), name, info, bulletin: '' });
       }
       return result;
@@ -212,6 +360,7 @@
           $('importError').textContent = `Could not find any classes in the ${dayType} day box.`;
           return;
         }
+
         const existing = current().schedules[dayType] || [];
         const byKey = new Map(existing.map(item => [`${item.name}|${item.info}`.toLowerCase(), item]));
         updated[dayType] = imported.map(item => {
@@ -233,8 +382,10 @@
       $('importPanel').classList.remove('hidden');
       $(`scheduleText${importDay[0].toUpperCase()}${importDay.slice(1)}`).focus();
     });
+
     $('pasteEvenBtn').addEventListener('click', () => chooseImportDay('even'));
     $('pasteOddBtn').addEventListener('click', () => chooseImportDay('odd'));
+
     function chooseImportDay(value) {
       importDay = value;
       $('pasteDayLabel').textContent = value;
@@ -245,10 +396,18 @@
       $('pasteEvenBtn').setAttribute('aria-selected', String(value === 'even'));
       $('pasteOddBtn').setAttribute('aria-selected', String(value === 'odd'));
     }
+
     $('evenBtn').addEventListener('click', () => chooseDay('even'));
     $('oddBtn').addEventListener('click', () => chooseDay('odd'));
-    function chooseDay(value) { day = value; renderSchedule(); }
-    function current() { return db.users[currentUser]; }
+
+    function chooseDay(value) {
+      day = value;
+      renderSchedule();
+    }
+
+    function current() {
+      return db.users[currentUser];
+    }
 
     function getBulletinUrl(value) {
       const match = (value || '').match(/https?:\/\/[^\s<>]+/i);
@@ -259,10 +418,13 @@
       const schedules = current().schedules;
       const hasAny = (schedules.even || []).length + (schedules.odd || []).length > 0;
       $('scheduleArea').classList.toggle('hidden', !hasAny);
+
       if (hasAny) {
         $('importPanel').classList.add('hidden');
         $('editSchedule').classList.remove('hidden');
-        day = (schedules[day] || []).length ? day : ((schedules.even || []).length ? 'even' : 'odd');
+        day = (schedules[day] || []).length
+          ? day
+          : ((schedules.even || []).length ? 'even' : 'odd');
         renderSchedule();
       } else {
         $('importPanel').classList.remove('hidden');
@@ -287,6 +449,7 @@
       list.forEach(cls => {
         const card = document.createElement('article');
         card.className = 'class-card';
+
         const heading = document.createElement('h2');
         heading.textContent = cls.name;
         card.append(heading);
@@ -355,6 +518,7 @@
     $('bulletinModal').addEventListener('click', event => {
       if (event.target === $('bulletinModal')) closeBulletin();
     });
+
     $('saveBulletin').addEventListener('click', () => {
       const cls = current().schedules[day].find(item => item.id === editingClass);
       if (cls) cls.bulletin = $('bulletinText').value.trim();
@@ -362,6 +526,7 @@
       closeBulletin();
       renderSchedule();
     });
+
     $('deleteBulletin').addEventListener('click', () => {
       const cls = current().schedules[day].find(item => item.id === editingClass);
       if (cls) cls.bulletin = '';

@@ -1,351 +1,239 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#173c67">
   <title>Gilman Upper School Schedules</title>
-  <link rel="icon" href="gilman.png" type="image/x-icon">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f9fafb;
-      margin: 0;
-      padding: 20px;
-      color: #333;
-    }
-
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-    }
-
-    h1 {
-      color: #222;
-      text-align: center;
-    }
-
-    .center {
-      text-align: center;
-      margin-top: 30px;
-    }
-
-    .hidden {
-      display: none;
-    }
-
-    .schedule-toggle {
-      margin: 20px 0;
-      display: flex;
-      justify-content: center;
-      gap: 15px;
-      flex-wrap: wrap;
-    }
-
-    .toggle-btn {
-      padding: 10px 18px;
-      border: none;
-      border-radius: 8px;
-      font-size: 15px;
-      cursor: pointer;
-      background: #e0e0e0;
-      transition: background 0.2s;
-    }
-
-    .toggle-btn.active {
-      background: #1f5ba4;
-      color: white;
-    }
-
-    .class-list {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-    }
-
-    .class-card {
-      background: #fff;
-      border-radius: 12px;
-      padding: 15px 20px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
-
-    .class-card strong {
-      font-size: 18px;
-      color: #1a1a1a;
-    }
-
-    .details {
-      margin-top: 10px;
-      background: #f1f5ff;
-      border-radius: 8px;
-      padding: 10px 12px;
-      font-size: 14px;
-      line-height: 1.4;
-    }
-
-    .details button {
-      display: block;
-      margin: 6px 0;
-      padding: 8px 12px;
-      background: #1f5ba4;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 14px;
-    }
-
-    .details button:hover {
-      background: #174782;
-    }
-
-    input[type="text"], input[type="password"] {
-      padding: 12px;
-      font-size: 16px;
-      width: 80%;
-      max-width: 250px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      margin-bottom: 10px;
-    }
-
-    button.login-btn {
-      padding: 12px 18px;
-      font-size: 16px;
-      background: #1f5ba4;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-
-    button.login-btn:hover {
-      background: #174782;
-    }
-
-    .logo {
-      display: block;
-      margin: 0 auto 15px auto;
-      max-width: 120px;
-    }
-
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 999;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background-color: rgba(0,0,0,0.6);
-    }
-
-    .modal-content {
-      position: relative;
-      background: #fff;
-      margin: 40px auto;
-      padding: 0;
-      border-radius: 10px;
-      max-width: 90%;
-      width: 800px;
-      height: 80%;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .modal iframe {
-      flex: 1;
-      border: none;
-      border-radius: 0 0 10px 10px;
-    }
-
-    .close-btn {
-      background: #1f5ba4;
-      color: white;
-      border: none;
-      padding: 10px;
-      border-radius: 10px 10px 0 0;
-      font-size: 16px;
-      cursor: pointer;
-    }
-
-    @media (max-width: 600px) {
-      body {
-        padding: 15px;
-      }
-
-      h1 {
-        font-size: 22px;
-      }
-
-      .class-card {
-        padding: 12px 15px;
-      }
-
-      .class-card strong {
-        font-size: 16px;
-      }
-
-      .details {
-        font-size: 13px;
-        padding: 8px 10px;
-      }
-
-      .details button {
-        font-size: 13px;
-        padding: 7px 10px;
-      }
-
-      .modal-content {
-        width: 95%;
-        height: 75%;
-      }
-    }
+    :root { color-scheme: light; --blue:#1f5ba4; --ink:#172536; --muted:#637184; --line:#dce3eb; --paper:#fff; --bg:#f3f6f9; }
+    * { box-sizing:border-box }
+    body { margin:0; padding:24px 16px 48px; color:var(--ink); background:var(--bg); font:16px/1.5 Arial,sans-serif }
+    button,input,textarea { font:inherit }
+    button { cursor:pointer }
+    .container { width:min(760px,100%); margin:0 auto }
+    .brand { text-align:center; margin:12px 0 28px }
+    .brand img { display:block; width:auto; height:auto; max-width:120px; max-height:90px; margin:0 auto 12px }
+    h1 { font-size:clamp(1.5rem,5vw,2rem); line-height:1.2; margin:0 0 8px }
+    h2 { font-size:1.2rem; margin:0 0 10px }
+    p { margin:8px 0 }
+    .panel,.class-card { background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:20px; box-shadow:0 3px 12px #1725360b }
+    .panel { margin:16px 0 }
+    .auth { max-width:460px; margin:0 auto }
+    .field { display:grid; gap:6px; margin:12px 0 }
+    input,textarea { width:100%; border:1px solid #bbc7d4; border-radius:8px; padding:11px 12px; background:#fff; color:var(--ink) }
+    textarea { min-height:210px; resize:vertical; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:.9rem }
+    button { border:0; border-radius:8px; padding:10px 14px; background:var(--blue); color:#fff; font-weight:600 }
+    button:hover { background:#174782 }
+    button.secondary { background:#e9eef4; color:#203246 }
+    button.secondary:hover { background:#dce5ee }
+    button.text { background:transparent; color:var(--blue); padding:8px }
+    .actions { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:12px }
+    .notice { color:var(--muted); font-size:.9rem }
+    .error { min-height:1.4em; color:#a52222 }
+    .topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px }
+    .topbar h1 { margin:0 }
+    .day-switch { display:flex; justify-content:center; gap:10px; margin:20px 0 }
+    .day-switch button { background:#e1e7ee; color:#29394c }
+    .day-switch button.active { background:var(--blue); color:white }
+    .class-list { display:grid; gap:12px }
+    .class-card h2 { margin:0 0 5px }
+    .class-info { margin:0 0 14px; color:var(--muted) }
+    .bulletin { border-top:1px solid var(--line); padding-top:12px }
+    .bulletin p { white-space:pre-wrap; margin:4px 0 10px }
+    .bulletin:empty { display:none }
+    .class-actions { display:flex; gap:8px; flex-wrap:wrap }
+    .empty { text-align:center; padding:28px 18px; color:var(--muted) }
+    .hidden { display:none !important }
+    .modal { position:fixed; inset:0; z-index:5; display:grid; place-items:center; padding:16px; background:#081625aa }
+    .modal-card { width:min(560px,100%); max-height:90vh; overflow:auto; background:#fff; border-radius:14px; padding:20px }
+    .modal-head { display:flex; justify-content:space-between; gap:12px; align-items:center }
+    @media(max-width:520px) { body { padding:16px 12px 36px } .panel,.class-card { padding:16px } .topbar { align-items:flex-start } }
   </style>
 </head>
 <body>
+  <main class="container">
+    <header class="brand">
+      <a href="https://www.gilman.edu/" target="_blank" rel="noreferrer"><img src="gilman.png" alt="Gilman School logo" onerror="this.hidden=true"></a>
+      <h1>Gilman Upper School Schedules</h1>
+      <p class="notice">Your schedule and bulletins are saved in this browser.</p>
+    </header>
 
-  <!-- Login Page -->
-  <div id="loginPage" class="center container">
-    <a href="https://gilman.instructure.com/" target="_blank">
-      <img src="gilman.png" alt="Gilman Logo" class="logo">
-    </a>
-    <h1>Gilman Upper School Schedules</h1>
-    <p>Login with your username and password:</p>
-    <input type="text" id="usernameInput" placeholder="Username (e.g., jsmith29)">
-    <br>
-    <input type="password" id="passwordInput" placeholder="Password">
-    <br><br>
-    <button class="login-btn" onclick="checkLogin()">Login</button>
-    <p id="errorMsg" style="color:red;"></p>
-  </div>
+    <section id="authView" class="auth">
+      <div class="panel">
+        <h2 id="authTitle">Create your schedule account</h2>
+        <p id="authDescription" class="notice">Choose a username and a password for this page. Do not enter your Gilman password.</p>
+        <form id="authForm">
+          <label class="field">Username<input id="username" autocomplete="username" required maxlength="40" placeholder="e.g. jsmith29"></label>
+          <label class="field">Password for this schedule page<input id="password" type="password" autocomplete="new-password" required minlength="8"></label>
+          <div id="confirmWrap" class="field"><label for="confirmPassword">Confirm password</label><input id="confirmPassword" type="password" autocomplete="new-password" minlength="8"></div>
+          <button id="authSubmit" type="submit">Create account</button>
+          <div id="authError" class="error" role="alert"></div>
+        </form>
+        <p class="notice"><span id="modePrompt">Already set up on this browser?</span> <button id="modeToggle" class="text" type="button">Sign in</button></p>
+      </div>
+    </section>
 
-  <!-- Main Content -->
-  <div id="mainContent" class="hidden container">
-    <div class="center">
-      <a href="https://gilman.instructure.com/" target="_blank">
-        <img src="gilman.png" alt="Gilman Logo" class="logo">
-      </a>
+    <section id="appView" class="hidden">
+      <div class="topbar"><h1>Daily Schedule</h1><button id="signOut" class="secondary" type="button">Sign out</button></div>
+      <section id="importPanel" class="panel">
+        <h2>Create or update your schedule</h2>
+        <p class="notice">In Veracross, open your daily schedule, copy the class details, and paste them below. You can paste one day at a time. The time headings and blank lines are ignored.</p>
+        <label class="field" for="scheduleText">Copied schedule</label>
+        <textarea id="scheduleText" placeholder="8:00 am
+
+Chemistry: 2
+Mr. Bowmaster • 1 Odd • GS109
+
+9:40 am
+
+Art History: Art Through the Ages: 1
+Mr. Emala • 2 Odd • GCT04"></textarea>
+        <div class="field"><label for="scheduleDay">This is an</label><select id="scheduleDay" style="padding:10px;border:1px solid #bbc7d4;border-radius:8px"><option value="even">Even day</option><option value="odd">Odd day</option></select></div>
+        <div class="actions"><button id="importSchedule" type="button">Save pasted classes</button><button id="editSchedule" class="secondary hidden" type="button">Edit pasted schedule</button></div>
+        <p id="importError" class="error" role="alert"></p>
+      </section>
+      <div id="scheduleArea" class="hidden">
+        <div class="day-switch" role="group" aria-label="Choose schedule day"><button id="evenBtn" type="button">Even day</button><button id="oddBtn" type="button">Odd day</button></div>
+        <div id="classContainer" class="class-list"></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="bulletinModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-card"><div class="modal-head"><h2 id="modalTitle">Class bulletin</h2><button id="closeModal" class="secondary" type="button">Close</button></div>
+      <label class="field" for="bulletinText">Bulletin text or link</label><textarea id="bulletinText" style="min-height:150px" placeholder="Add the bulletin or paste a link"></textarea>
+      <div class="actions"><button id="saveBulletin" type="button">Save bulletin</button><button id="deleteBulletin" class="secondary" type="button">Remove bulletin</button></div>
     </div>
-    <h1>Daily Schedule</h1>
-
-    <div class="schedule-toggle">
-      <button id="evenBtn" class="toggle-btn active">Even Day</button>
-      <button id="oddBtn" class="toggle-btn">Odd Day</button>
-    </div>
-
-    <div id="classContainer" class="class-list"></div>
   </div>
-
-  <!-- Modal for Bulletins -->
-  <div id="bulletinModal" class="modal">
-    <div class="modal-content">
-      <button class="close-btn" onclick="closeModal()">Close</button>
-      <iframe id="bulletinFrame" src=""></iframe>
-    </div>
-  </div>
-
   <script>
-    // User credentials
-    const users = [
-      {
-        username: "toverduin29",
-        password: "middle5338Brine@",
-        scheduleType: "even"
-      }
-    ];
+    const STORAGE_KEY = 'gilman-schedules-v1';
+    const $ = id => document.getElementById(id);
+    let db = readStore();
+    let currentUser = null;
+    let day = 'even';
+    let editingClass = null;
+    let signingIn = false;
 
-    const usernameInput = document.getElementById("usernameInput");
-    const passwordInput = document.getElementById("passwordInput");
-    const errorMsg = document.getElementById("errorMsg");
-
-    passwordInput.addEventListener("keydown", e => {
-      if (e.key === "Enter") checkLogin();
-    });
-
-    function checkLogin() {
-      const username = usernameInput.value.trim();
-      const password = passwordInput.value.trim();
-      const user = users.find(u => u.username === username && u.password === password);
-
-      if (user) {
-        document.getElementById("loginPage").style.display = "none";
-        document.getElementById("mainContent").style.display = "block";
-        renderSchedule(user.scheduleType);
+    function readStore() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || { users: {} }; }
+      catch { return { users: {} }; }
+    }
+    function persist() { localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }
+    function setMode(signIn) {
+      signingIn = signIn;
+      $('authTitle').textContent = signIn ? 'Sign in' : 'Create your schedule account';
+      $('authDescription').textContent = signIn ? 'Sign in to the schedule account saved in this browser.' : 'Choose a username and a password for this page. Do not enter your Gilman password.';
+      $('authSubmit').textContent = signIn ? 'Sign in' : 'Create account';
+      $('confirmWrap').classList.toggle('hidden', signIn);
+      $('modePrompt').textContent = signIn ? 'New to this browser?' : 'Already set up on this browser?';
+      $('modeToggle').textContent = signIn ? 'Create account' : 'Sign in';
+      $('authError').textContent = '';
+    }
+    $('modeToggle').addEventListener('click', () => setMode(!signingIn));
+    $('authForm').addEventListener('submit', async event => {
+      event.preventDefault();
+      const name = $('username').value.trim().toLowerCase();
+      const password = $('password').value;
+      if (!name) return;
+      let user = db.users[name];
+      if (signingIn) {
+        const hash = await hashPassword(password, user?.salt);
+        if (!user || hash !== user.passwordHash) { $('authError').textContent = 'That username or password is not recognized on this browser.'; return; }
       } else {
-        errorMsg.textContent = "Invalid username or password.";
-        passwordInput.value = "";
-        passwordInput.focus();
+        if (user) { $('authError').textContent = 'An account with that username already exists in this browser. Sign in instead.'; return; }
+        if (password !== $('confirmPassword').value) { $('authError').textContent = 'The passwords do not match.'; return; }
+        const salt = crypto.randomUUID();
+        user = { salt, passwordHash: await hashPassword(password, salt), schedules: { even: [], odd: [] } };
+        db.users[name] = user;
+        persist();
+      }
+      currentUser = name;
+      $('authView').classList.add('hidden');
+      $('appView').classList.remove('hidden');
+      updateScheduleView();
+    });
+    async function hashPassword(value, salt = '') {
+      const bytes = new TextEncoder().encode(`${salt}:${value}`);
+      const digest = await crypto.subtle.digest('SHA-256', bytes);
+      return [...new Uint8Array(digest)].map(n => n.toString(16).padStart(2, '0')).join('');
+    }
+    $('signOut').addEventListener('click', () => { currentUser = null; $('appView').classList.add('hidden'); $('authView').classList.remove('hidden'); $('authForm').reset(); });
+
+    function parseClasses(text, dayType) {
+      const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+      const isTime = line => /^\d{1,2}:\d{2}\s*(?:am|pm)$/i.test(line);
+      const useful = lines.filter(line => !isTime(line) && !/^\|\s*-+\s*\|?$/.test(line));
+      const result = [];
+      for (let i = 0; i < useful.length;) {
+        let name = useful[i++].replace(/^\*{1,2}|\*{1,2}$/g, '').trim();
+        let info = '';
+        if (i < useful.length && !/^[*_]{1,2}.+/.test(useful[i])) info = useful[i++].replace(/^\*{1,2}|\*{1,2}$/g, '').trim();
+        name = name.replace(/^\*+|\*+$/g, '').trim();
+        if (!name) continue;
+        if (info && !new RegExp(`\\b${dayType}\\b`, 'i').test(info)) info = `${info} • ${dayType[0].toUpperCase()}${dayType.slice(1)}`;
+        result.push({ id: crypto.randomUUID(), name, info, bulletin: '' });
+      }
+      return result;
+    }
+    $('importSchedule').addEventListener('click', () => {
+      const text = $('scheduleText').value;
+      const imported = parseClasses(text, $('scheduleDay').value);
+      if (!imported.length) { $('importError').textContent = 'Paste the class names and their teacher / period / room details, then try again.'; return; }
+      const existing = current().schedules[$('scheduleDay').value] || [];
+      const byKey = new Map(existing.map(item => [`${item.name}|${item.info}`.toLowerCase(), item]));
+      current().schedules[$('scheduleDay').value] = imported.map(item => {
+        const old = byKey.get(`${item.name}|${item.info}`.toLowerCase());
+        return old ? { ...item, id: old.id, bulletin: old.bulletin || '' } : item;
+      });
+      persist(); $('importError').textContent = ''; $('scheduleText').value = '';
+      updateScheduleView(); renderSchedule();
+    });
+    $('editSchedule').addEventListener('click', () => { $('importPanel').classList.remove('hidden'); $('scheduleText').focus(); });
+    $('evenBtn').addEventListener('click', () => chooseDay('even'));
+    $('oddBtn').addEventListener('click', () => chooseDay('odd'));
+    function chooseDay(value) { day = value; renderSchedule(); }
+    function current() { return db.users[currentUser]; }
+    function updateScheduleView() {
+      const schedules = current().schedules;
+      const hasAny = (schedules.even || []).length + (schedules.odd || []).length > 0;
+      $('scheduleArea').classList.toggle('hidden', !hasAny);
+      if (hasAny) {
+        $('importPanel').classList.add('hidden'); $('editSchedule').classList.remove('hidden');
+        day = (schedules[day] || []).length ? day : ((schedules.even || []).length ? 'even' : 'odd');
+        renderSchedule();
+      } else {
+        $('importPanel').classList.remove('hidden'); $('editSchedule').classList.add('hidden');
       }
     }
-
-    window.onload = () => usernameInput.focus();
-
-    // --- Schedule Data ---
-    const schedules = {
-      even: [
-        { name: "English Ten: 5", info: "Anastasio • 1 Even • GCT14", bulletins: ["https://docs.google.com/document/d/1ktv7v2ur0QC7ZUQjpgW6mRFO9sxSd_OELHAfJjyAlxU/edit?tab=t.0"] },
-        { name: "(H) French III: 1", info: "Ms. Allen • 2 Even • GA106", bulletins: ["https://docs.google.com/document/d/1XmyZlRhdyA30ZY3Hem4fkg3_lpTBRV8_dGOxuulAZT4/edit?tab=t.0"] },
-        { name: "Making Modern Europe: 7", info: "Ms. Finnerty • 3 Even • GCT04", bulletins: ["https://gilman.instructure.com/courses/12492/assignments"] }
-      ],
-      odd: [
-        { name: "Chemistry: 2", info: "Mr. Bowmaster • 1 Odd • GS109", bulletins: ["https://docs.google.com/document/d/1FOMudkF5Lh6OBoAAe0wPn-OP4ES1YxXynJwMtn0QDcQ/edit?tab=t.0"] },
-        { name: "Art History: Art Through the Ages: 1", info: "Mr. Emala • 2 Odd • GCT04", bulletins: ["https://docs.google.com/document/d/1_6uuUHG5kzeZuKiziIiULa11KAD4D5HU00HE3zTUF30/edit?tab=t.0"] },
-        { name: "(H) AB Geometry : 1", info: "DeBoer • 3 Odd • GC314", bulletins: ["https://gilman.instructure.com/courses/12181"] }
-      ]
-    };
-
-    const classContainer = document.getElementById("classContainer");
-    const modal = document.getElementById("bulletinModal");
-    const bulletinFrame = document.getElementById("bulletinFrame");
-
-    function renderSchedule(dayType) {
-      classContainer.innerHTML = '';
-      const classes = schedules[dayType];
-
-      classes.forEach(cls => {
-        const card = document.createElement('div');
-        card.className = 'class-card';
-        card.innerHTML = `<strong>${cls.name}</strong>`;
-
-        const details = document.createElement('div');
-        details.className = 'details';
-
-        let bulletinHTML = cls.bulletins.map((link, idx) =>
-          `<button onclick="openModal('${link}')">View Bulletin ${cls.bulletins.length > 1 ? idx+1 : ''}</button>`
-        ).join("");
-
-        details.innerHTML = `
-          <p><strong>Info:</strong> ${cls.info}</p>
-          <p><strong>Daily Bulletin:</strong><br>${bulletinHTML}</p>
-        `;
-
-        card.appendChild(details);
-        classContainer.appendChild(card);
+    function renderSchedule() {
+      $('evenBtn').classList.toggle('active', day === 'even'); $('oddBtn').classList.toggle('active', day === 'odd');
+      const list = current().schedules[day] || [];
+      $('classContainer').replaceChildren();
+      if (!list.length) {
+        const empty = document.createElement('div'); empty.className = 'panel empty'; empty.textContent = `No ${day} day classes saved yet. Use “Edit pasted schedule” to add them.`; $('classContainer').append(empty); return;
+      }
+      list.forEach(cls => {
+        const card = document.createElement('article'); card.className = 'class-card';
+        const heading = document.createElement('h2'); heading.textContent = cls.name; card.append(heading);
+        if (cls.info) { const info = document.createElement('p'); info.className = 'class-info'; info.textContent = cls.info; card.append(info); }
+        const bulletin = document.createElement('div'); bulletin.className = 'bulletin';
+        if (cls.bulletin) { const title = document.createElement('strong'); title.textContent = 'Daily bulletin'; const body = document.createElement('p'); body.textContent = cls.bulletin; bulletin.append(title, body); }
+        card.append(bulletin);
+        const actions = document.createElement('div'); actions.className = 'class-actions';
+        const edit = document.createElement('button'); edit.type = 'button'; edit.className = 'secondary'; edit.textContent = cls.bulletin ? 'Edit bulletin' : 'Add bulletin'; edit.addEventListener('click', () => openBulletin(cls.id));
+        actions.append(edit);
+        if (cls.bulletin && /^https?:\/\//i.test(cls.bulletin.trim())) { const link = document.createElement('a'); link.href = cls.bulletin.trim(); link.target = '_blank'; link.rel = 'noreferrer'; link.textContent = 'Open bulletin'; link.className = 'notice'; link.style.alignSelf = 'center'; actions.append(link); }
+        card.append(actions); $('classContainer').append(card);
       });
-
-      document.getElementById("evenBtn").classList.toggle("active", dayType === "even");
-      document.getElementById("oddBtn").classList.toggle("active", dayType === "odd");
     }
-
-    document.getElementById("evenBtn").addEventListener("click", () => renderSchedule("even"));
-    document.getElementById("oddBtn").addEventListener("click", () => renderSchedule("odd"));
-
-    function openModal(link) {
-      bulletinFrame.src = link;
-      modal.style.display = "block";
-    }
-
-    function closeModal() {
-      modal.style.display = "none";
-      bulletinFrame.src = "";
-    }
-
-    window.onclick = function(event) {
-      if (event.target === modal) closeModal();
-    }
+    function openBulletin(id) { editingClass = id; const cls = current().schedules[day].find(item => item.id === id); $('modalTitle').textContent = `${cls.name} bulletin`; $('bulletinText').value = cls.bulletin || ''; $('deleteBulletin').classList.toggle('hidden', !cls.bulletin); $('bulletinModal').classList.remove('hidden'); $('bulletinText').focus(); }
+    function closeBulletin() { $('bulletinModal').classList.add('hidden'); editingClass = null; }
+    $('closeModal').addEventListener('click', closeBulletin);
+    $('bulletinModal').addEventListener('click', event => { if (event.target === $('bulletinModal')) closeBulletin(); });
+    $('saveBulletin').addEventListener('click', () => { const cls = current().schedules[day].find(item => item.id === editingClass); if (cls) cls.bulletin = $('bulletinText').value.trim(); persist(); closeBulletin(); renderSchedule(); });
+    $('deleteBulletin').addEventListener('click', () => { const cls = current().schedules[day].find(item => item.id === editingClass); if (cls) cls.bulletin = ''; persist(); closeBulletin(); renderSchedule(); });
+    setMode(false);
   </script>
-
 </body>
 </html>

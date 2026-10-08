@@ -46,6 +46,8 @@
     .bulletin p { white-space:pre-wrap; margin:4px 0 10px }
     .bulletin:empty { display:none }
     .class-actions { display:flex; gap:8px; flex-wrap:wrap }
+    .button-link { display:inline-block; border-radius:8px; padding:10px 14px; background:var(--blue); color:#fff; font-weight:600; text-decoration:none }
+    .button-link:hover { background:#174782 }
     .empty { text-align:center; padding:28px 18px; color:var(--muted) }
     .hidden { display:none !important }
     .modal { position:fixed; inset:0; z-index:5; display:grid; place-items:center; padding:16px; background:#081625aa }
@@ -78,7 +80,13 @@
     </section>
 
     <section id="appView" class="hidden">
-      <div class="topbar"><h1>Daily Schedule</h1><button id="signOut" class="secondary" type="button">Sign out</button></div>
+      <div class="topbar">
+        <h1>Daily Schedule</h1>
+        <div class="actions">
+          <button id="editSchedule" class="secondary hidden" type="button">Edit pasted schedule</button>
+          <button id="signOut" class="secondary" type="button">Sign out</button>
+        </div>
+      </div>
       <section id="importPanel" class="panel">
         <h2>Create or update your schedule</h2>
         <p class="notice">In Veracross, open your daily schedule, copy the class details, and paste them below. You can paste one day at a time. The time headings and blank lines are ignored.</p>
@@ -89,7 +97,7 @@
         <label class="field" for="scheduleTextEven">Copied <span id="pasteDayLabel">even</span> day schedule</label>
         <textarea id="scheduleTextEven" placeholder="Paste your even day classes here"></textarea>
         <textarea id="scheduleTextOdd" class="hidden" aria-label="Odd day schedule" placeholder="Paste your odd day classes here"></textarea>
-        <div class="actions"><button id="importSchedule" type="button">Save pasted classes</button><button id="editSchedule" class="secondary hidden" type="button">Edit pasted schedule</button></div>
+        <div class="actions"><button id="importSchedule" type="button">Save pasted classes</button></div>
         <p id="importError" class="error" role="alert"></p>
       </section>
       <div id="scheduleArea" class="hidden">
@@ -100,8 +108,10 @@
   </main>
 
   <div id="bulletinModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-    <div class="modal-card"><div class="modal-head"><h2 id="modalTitle">Class bulletin</h2><button id="closeModal" class="secondary" type="button">Close</button></div>
-      <label class="field" for="bulletinText">Bulletin text or link</label><textarea id="bulletinText" style="min-height:150px" placeholder="Add the bulletin or paste a link"></textarea>
+    <div class="modal-card">
+      <div class="modal-head"><h2 id="modalTitle">Class bulletin</h2><button id="closeModal" class="secondary" type="button">Close</button></div>
+      <label class="field" for="bulletinText">Bulletin text or link</label>
+      <textarea id="bulletinText" style="min-height:150px" placeholder="Add the bulletin or paste a link"></textarea>
       <div class="actions"><button id="saveBulletin" type="button">Save bulletin</button><button id="deleteBulletin" class="secondary" type="button">Remove bulletin</button></div>
     </div>
   </div>
@@ -158,7 +168,12 @@
       const digest = await crypto.subtle.digest('SHA-256', bytes);
       return [...new Uint8Array(digest)].map(n => n.toString(16).padStart(2, '0')).join('');
     }
-    $('signOut').addEventListener('click', () => { currentUser = null; $('appView').classList.add('hidden'); $('authView').classList.remove('hidden'); $('authForm').reset(); });
+    $('signOut').addEventListener('click', () => {
+      currentUser = null;
+      $('appView').classList.add('hidden');
+      $('authView').classList.remove('hidden');
+      $('authForm').reset();
+    });
 
     function parseClasses(text, dayType) {
       const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
@@ -180,17 +195,26 @@
       const inputId = `scheduleText${importDay[0].toUpperCase()}${importDay.slice(1)}`;
       const text = $(inputId).value;
       const imported = parseClasses(text, importDay);
-      if (!imported.length) { $('importError').textContent = 'Paste the class names and their teacher / period / room details, then try again.'; return; }
+      if (!imported.length) {
+        $('importError').textContent = 'Paste the class names and their teacher / period / room details, then try again.';
+        return;
+      }
       const existing = current().schedules[importDay] || [];
       const byKey = new Map(existing.map(item => [`${item.name}|${item.info}`.toLowerCase(), item]));
       current().schedules[importDay] = imported.map(item => {
         const old = byKey.get(`${item.name}|${item.info}`.toLowerCase());
         return old ? { ...item, id: old.id, bulletin: old.bulletin || '' } : item;
       });
-      persist(); $('importError').textContent = ''; $(inputId).value = '';
-      updateScheduleView(); renderSchedule();
+      persist();
+      $('importError').textContent = '';
+      $(inputId).value = '';
+      updateScheduleView();
+      renderSchedule();
     });
-    $('editSchedule').addEventListener('click', () => { $('importPanel').classList.remove('hidden'); $(`scheduleText${importDay[0].toUpperCase()}${importDay.slice(1)}`).focus(); });
+    $('editSchedule').addEventListener('click', () => {
+      $('importPanel').classList.remove('hidden');
+      $(`scheduleText${importDay[0].toUpperCase()}${importDay.slice(1)}`).focus();
+    });
     $('pasteEvenBtn').addEventListener('click', () => chooseImportDay('even'));
     $('pasteOddBtn').addEventListener('click', () => chooseImportDay('odd'));
     function chooseImportDay(value) {
@@ -212,40 +236,102 @@
       const hasAny = (schedules.even || []).length + (schedules.odd || []).length > 0;
       $('scheduleArea').classList.toggle('hidden', !hasAny);
       if (hasAny) {
-        $('importPanel').classList.add('hidden'); $('editSchedule').classList.remove('hidden');
+        $('importPanel').classList.add('hidden');
+        $('editSchedule').classList.remove('hidden');
         day = (schedules[day] || []).length ? day : ((schedules.even || []).length ? 'even' : 'odd');
         renderSchedule();
       } else {
-        $('importPanel').classList.remove('hidden'); $('editSchedule').classList.add('hidden');
+        $('importPanel').classList.remove('hidden');
+        $('editSchedule').classList.add('hidden');
       }
     }
     function renderSchedule() {
-      $('evenBtn').classList.toggle('active', day === 'even'); $('oddBtn').classList.toggle('active', day === 'odd');
+      $('evenBtn').classList.toggle('active', day === 'even');
+      $('oddBtn').classList.toggle('active', day === 'odd');
       const list = current().schedules[day] || [];
       $('classContainer').replaceChildren();
       if (!list.length) {
-        const empty = document.createElement('div'); empty.className = 'panel empty'; empty.textContent = `No ${day} day classes saved yet. Use “Edit pasted schedule” to add them.`; $('classContainer').append(empty); return;
+        const empty = document.createElement('div');
+        empty.className = 'panel empty';
+        empty.textContent = `No ${day} day classes saved yet. Use “Edit pasted schedule” to add them.`;
+        $('classContainer').append(empty);
+        return;
       }
       list.forEach(cls => {
-        const card = document.createElement('article'); card.className = 'class-card';
-        const heading = document.createElement('h2'); heading.textContent = cls.name; card.append(heading);
-        if (cls.info) { const info = document.createElement('p'); info.className = 'class-info'; info.textContent = cls.info; card.append(info); }
-        const bulletin = document.createElement('div'); bulletin.className = 'bulletin';
-        if (cls.bulletin) { const title = document.createElement('strong'); title.textContent = 'Daily bulletin'; const body = document.createElement('p'); body.textContent = cls.bulletin; bulletin.append(title, body); }
+        const card = document.createElement('article');
+        card.className = 'class-card';
+        const heading = document.createElement('h2');
+        heading.textContent = cls.name;
+        card.append(heading);
+        if (cls.info) {
+          const info = document.createElement('p');
+          info.className = 'class-info';
+          info.textContent = cls.info;
+          card.append(info);
+        }
+        const bulletin = document.createElement('div');
+        bulletin.className = 'bulletin';
+        const isBulletinLink = /^https?:\/\//i.test((cls.bulletin || '').trim());
+        if (cls.bulletin && !isBulletinLink) {
+          const title = document.createElement('strong');
+          title.textContent = 'Daily bulletin';
+          const body = document.createElement('p');
+          body.textContent = cls.bulletin;
+          bulletin.append(title, body);
+        }
         card.append(bulletin);
-        const actions = document.createElement('div'); actions.className = 'class-actions';
-        const edit = document.createElement('button'); edit.type = 'button'; edit.className = 'secondary'; edit.textContent = cls.bulletin ? 'Edit bulletin' : 'Add bulletin'; edit.addEventListener('click', () => openBulletin(cls.id));
+        const actions = document.createElement('div');
+        actions.className = 'class-actions';
+        if (isBulletinLink) {
+          const link = document.createElement('a');
+          link.href = cls.bulletin.trim();
+          link.target = '_blank';
+          link.rel = 'noreferrer';
+          link.textContent = 'View bulletin';
+          link.className = 'button-link';
+          actions.append(link);
+        }
+        const edit = document.createElement('button');
+        edit.type = 'button';
+        edit.className = 'secondary';
+        edit.textContent = cls.bulletin ? 'Edit bulletin' : 'Add bulletin';
+        edit.addEventListener('click', () => openBulletin(cls.id));
         actions.append(edit);
-        if (cls.bulletin && /^https?:\/\//i.test(cls.bulletin.trim())) { const link = document.createElement('a'); link.href = cls.bulletin.trim(); link.target = '_blank'; link.rel = 'noreferrer'; link.textContent = 'Open bulletin'; link.className = 'notice'; link.style.alignSelf = 'center'; actions.append(link); }
-        card.append(actions); $('classContainer').append(card);
+        card.append(actions);
+        $('classContainer').append(card);
       });
     }
-    function openBulletin(id) { editingClass = id; const cls = current().schedules[day].find(item => item.id === id); $('modalTitle').textContent = `${cls.name} bulletin`; $('bulletinText').value = cls.bulletin || ''; $('deleteBulletin').classList.toggle('hidden', !cls.bulletin); $('bulletinModal').classList.remove('hidden'); $('bulletinText').focus(); }
-    function closeBulletin() { $('bulletinModal').classList.add('hidden'); editingClass = null; }
+    function openBulletin(id) {
+      editingClass = id;
+      const cls = current().schedules[day].find(item => item.id === id);
+      $('modalTitle').textContent = `${cls.name} bulletin`;
+      $('bulletinText').value = cls.bulletin || '';
+      $('deleteBulletin').classList.toggle('hidden', !cls.bulletin);
+      $('bulletinModal').classList.remove('hidden');
+      $('bulletinText').focus();
+    }
+    function closeBulletin() {
+      $('bulletinModal').classList.add('hidden');
+      editingClass = null;
+    }
     $('closeModal').addEventListener('click', closeBulletin);
-    $('bulletinModal').addEventListener('click', event => { if (event.target === $('bulletinModal')) closeBulletin(); });
-    $('saveBulletin').addEventListener('click', () => { const cls = current().schedules[day].find(item => item.id === editingClass); if (cls) cls.bulletin = $('bulletinText').value.trim(); persist(); closeBulletin(); renderSchedule(); });
-    $('deleteBulletin').addEventListener('click', () => { const cls = current().schedules[day].find(item => item.id === editingClass); if (cls) cls.bulletin = ''; persist(); closeBulletin(); renderSchedule(); });
+    $('bulletinModal').addEventListener('click', event => {
+      if (event.target === $('bulletinModal')) closeBulletin();
+    });
+    $('saveBulletin').addEventListener('click', () => {
+      const cls = current().schedules[day].find(item => item.id === editingClass);
+      if (cls) cls.bulletin = $('bulletinText').value.trim();
+      persist();
+      closeBulletin();
+      renderSchedule();
+    });
+    $('deleteBulletin').addEventListener('click', () => {
+      const cls = current().schedules[day].find(item => item.id === editingClass);
+      if (cls) cls.bulletin = '';
+      persist();
+      closeBulletin();
+      renderSchedule();
+    });
     setMode(false);
     chooseImportDay('even');
   </script>

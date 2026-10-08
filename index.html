@@ -1,3 +1,6 @@
+Here’s the complete updated HTML. Copy everything in the code block into your GitHub `index.html`:
+
+```html
 <!doctype html>
 <html lang="en">
 <head>
@@ -36,6 +39,9 @@
     .day-switch { display:flex; justify-content:center; gap:10px; margin:20px 0 }
     .day-switch button { background:#e1e7ee; color:#29394c }
     .day-switch button.active { background:var(--blue); color:white }
+    .paste-switch { display:flex; gap:8px; margin:14px 0 8px }
+    .paste-switch button { flex:1; background:#e1e7ee; color:#29394c }
+    .paste-switch button.active { background:var(--blue); color:#fff }
     .class-list { display:grid; gap:12px }
     .class-card h2 { margin:0 0 5px }
     .class-info { margin:0 0 14px; color:var(--muted) }
@@ -79,17 +85,13 @@
       <section id="importPanel" class="panel">
         <h2>Create or update your schedule</h2>
         <p class="notice">In Veracross, open your daily schedule, copy the class details, and paste them below. You can paste one day at a time. The time headings and blank lines are ignored.</p>
-        <label class="field" for="scheduleText">Copied schedule</label>
-        <textarea id="scheduleText" placeholder="8:00 am
-
-Chemistry: 2
-Mr. Bowmaster • 1 Odd • GS109
-
-9:40 am
-
-Art History: Art Through the Ages: 1
-Mr. Emala • 2 Odd • GCT04"></textarea>
-        <div class="field"><label for="scheduleDay">This is an</label><select id="scheduleDay" style="padding:10px;border:1px solid #bbc7d4;border-radius:8px"><option value="even">Even day</option><option value="odd">Odd day</option></select></div>
+        <div class="paste-switch" role="tablist" aria-label="Choose schedule to paste">
+          <button id="pasteEvenBtn" type="button" role="tab" aria-selected="true">Even day</button>
+          <button id="pasteOddBtn" type="button" role="tab" aria-selected="false">Odd day</button>
+        </div>
+        <label class="field" for="scheduleTextEven">Copied <span id="pasteDayLabel">even</span> day schedule</label>
+        <textarea id="scheduleTextEven" placeholder="Paste your even day classes here"></textarea>
+        <textarea id="scheduleTextOdd" class="hidden" aria-label="Odd day schedule" placeholder="Paste your odd day classes here"></textarea>
         <div class="actions"><button id="importSchedule" type="button">Save pasted classes</button><button id="editSchedule" class="secondary hidden" type="button">Edit pasted schedule</button></div>
         <p id="importError" class="error" role="alert"></p>
       </section>
@@ -112,6 +114,7 @@ Mr. Emala • 2 Odd • GCT04"></textarea>
     let db = readStore();
     let currentUser = null;
     let day = 'even';
+    let importDay = 'even';
     let editingClass = null;
     let signingIn = false;
 
@@ -177,19 +180,32 @@ Mr. Emala • 2 Odd • GCT04"></textarea>
       return result;
     }
     $('importSchedule').addEventListener('click', () => {
-      const text = $('scheduleText').value;
-      const imported = parseClasses(text, $('scheduleDay').value);
+      const inputId = `scheduleText${importDay[0].toUpperCase()}${importDay.slice(1)}`;
+      const text = $(inputId).value;
+      const imported = parseClasses(text, importDay);
       if (!imported.length) { $('importError').textContent = 'Paste the class names and their teacher / period / room details, then try again.'; return; }
-      const existing = current().schedules[$('scheduleDay').value] || [];
+      const existing = current().schedules[importDay] || [];
       const byKey = new Map(existing.map(item => [`${item.name}|${item.info}`.toLowerCase(), item]));
-      current().schedules[$('scheduleDay').value] = imported.map(item => {
+      current().schedules[importDay] = imported.map(item => {
         const old = byKey.get(`${item.name}|${item.info}`.toLowerCase());
         return old ? { ...item, id: old.id, bulletin: old.bulletin || '' } : item;
       });
-      persist(); $('importError').textContent = ''; $('scheduleText').value = '';
+      persist(); $('importError').textContent = ''; $(inputId).value = '';
       updateScheduleView(); renderSchedule();
     });
-    $('editSchedule').addEventListener('click', () => { $('importPanel').classList.remove('hidden'); $('scheduleText').focus(); });
+    $('editSchedule').addEventListener('click', () => { $('importPanel').classList.remove('hidden'); $(`scheduleText${importDay[0].toUpperCase()}${importDay.slice(1)}`).focus(); });
+    $('pasteEvenBtn').addEventListener('click', () => chooseImportDay('even'));
+    $('pasteOddBtn').addEventListener('click', () => chooseImportDay('odd'));
+    function chooseImportDay(value) {
+      importDay = value;
+      $('pasteDayLabel').textContent = value;
+      $('scheduleTextEven').classList.toggle('hidden', value !== 'even');
+      $('scheduleTextOdd').classList.toggle('hidden', value !== 'odd');
+      $('pasteEvenBtn').classList.toggle('active', value === 'even');
+      $('pasteOddBtn').classList.toggle('active', value === 'odd');
+      $('pasteEvenBtn').setAttribute('aria-selected', String(value === 'even'));
+      $('pasteOddBtn').setAttribute('aria-selected', String(value === 'odd'));
+    }
     $('evenBtn').addEventListener('click', () => chooseDay('even'));
     $('oddBtn').addEventListener('click', () => chooseDay('odd'));
     function chooseDay(value) { day = value; renderSchedule(); }
@@ -234,6 +250,8 @@ Mr. Emala • 2 Odd • GCT04"></textarea>
     $('saveBulletin').addEventListener('click', () => { const cls = current().schedules[day].find(item => item.id === editingClass); if (cls) cls.bulletin = $('bulletinText').value.trim(); persist(); closeBulletin(); renderSchedule(); });
     $('deleteBulletin').addEventListener('click', () => { const cls = current().schedules[day].find(item => item.id === editingClass); if (cls) cls.bulletin = ''; persist(); closeBulletin(); renderSchedule(); });
     setMode(false);
+    chooseImportDay('even');
   </script>
 </body>
 </html>
+```

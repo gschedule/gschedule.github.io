@@ -39,6 +39,7 @@
     .paste-switch { display:flex; gap:8px; margin:14px 0 8px }
     .paste-switch button { flex:1; background:#e1e7ee; color:#29394c }
     .paste-switch button.active { background:var(--blue); color:#fff }
+    .paste-label { display:block; margin:12px 0 6px }
     .class-list { display:grid; gap:12px }
     .class-card h2 { margin:0 0 5px }
     .class-info { margin:0 0 14px; color:var(--muted) }
@@ -89,12 +90,12 @@
       </div>
       <section id="importPanel" class="panel">
         <h2>Create or update your schedule</h2>
-        <p class="notice">In Veracross, open your daily schedule, copy the class details, and paste them below. You can paste one day at a time. The time headings and blank lines are ignored.</p>
+        <p class="notice">In Veracross, open your daily schedule, copy the class details, and paste them below. Paste each day's classes into its own tab. Click Save pasted classes after entering both schedules.</p>
         <div class="paste-switch" role="tablist" aria-label="Choose schedule to paste">
           <button id="pasteEvenBtn" type="button" role="tab" aria-selected="true">Even day</button>
           <button id="pasteOddBtn" type="button" role="tab" aria-selected="false">Odd day</button>
         </div>
-        <label class="field" for="scheduleTextEven">Copied <span id="pasteDayLabel">even</span> day schedule</label>
+        <label class="paste-label" for="scheduleTextEven">Copied <span id="pasteDayLabel">even</span> day schedule</label>
         <textarea id="scheduleTextEven" placeholder="Paste your even day classes here"></textarea>
         <textarea id="scheduleTextOdd" class="hidden" aria-label="Odd day schedule" placeholder="Paste your odd day classes here"></textarea>
         <div class="actions"><button id="importSchedule" type="button">Save pasted classes</button></div>
@@ -191,26 +192,43 @@
       }
       return result;
     }
+
     $('importSchedule').addEventListener('click', () => {
-      const inputId = `scheduleText${importDay[0].toUpperCase()}${importDay.slice(1)}`;
-      const text = $(inputId).value;
-      const imported = parseClasses(text, importDay);
-      if (!imported.length) {
-        $('importError').textContent = 'Paste the class names and their teacher / period / room details, then try again.';
+      const pasted = {
+        even: $('scheduleTextEven').value,
+        odd: $('scheduleTextOdd').value
+      };
+      const daysToSave = Object.entries(pasted).filter(([, text]) => text.trim());
+
+      if (!daysToSave.length) {
+        $('importError').textContent = 'Paste your even day and odd day schedules before saving.';
         return;
       }
-      const existing = current().schedules[importDay] || [];
-      const byKey = new Map(existing.map(item => [`${item.name}|${item.info}`.toLowerCase(), item]));
-      current().schedules[importDay] = imported.map(item => {
-        const old = byKey.get(`${item.name}|${item.info}`.toLowerCase());
-        return old ? { ...item, id: old.id, bulletin: old.bulletin || '' } : item;
-      });
+
+      const updated = {};
+      for (const [dayType, text] of daysToSave) {
+        const imported = parseClasses(text, dayType);
+        if (!imported.length) {
+          $('importError').textContent = `Could not find any classes in the ${dayType} day box.`;
+          return;
+        }
+        const existing = current().schedules[dayType] || [];
+        const byKey = new Map(existing.map(item => [`${item.name}|${item.info}`.toLowerCase(), item]));
+        updated[dayType] = imported.map(item => {
+          const old = byKey.get(`${item.name}|${item.info}`.toLowerCase());
+          return old ? { ...item, id: old.id, bulletin: old.bulletin || '' } : item;
+        });
+      }
+
+      Object.assign(current().schedules, updated);
       persist();
       $('importError').textContent = '';
-      $(inputId).value = '';
+      if (pasted.even.trim()) $('scheduleTextEven').value = '';
+      if (pasted.odd.trim()) $('scheduleTextOdd').value = '';
       updateScheduleView();
       renderSchedule();
     });
+
     $('editSchedule').addEventListener('click', () => {
       $('importPanel').classList.remove('hidden');
       $(`scheduleText${importDay[0].toUpperCase()}${importDay.slice(1)}`).focus();
@@ -231,6 +249,12 @@
     $('oddBtn').addEventListener('click', () => chooseDay('odd'));
     function chooseDay(value) { day = value; renderSchedule(); }
     function current() { return db.users[currentUser]; }
+
+    function getBulletinUrl(value) {
+      const match = (value || '').match(/https?:\/\/[^\s<>]+/i);
+      return match ? match[0].replace(/[),.;]+$/, '') : '';
+    }
+
     function updateScheduleView() {
       const schedules = current().schedules;
       const hasAny = (schedules.even || []).length + (schedules.odd || []).length > 0;
@@ -245,11 +269,13 @@
         $('editSchedule').classList.add('hidden');
       }
     }
+
     function renderSchedule() {
       $('evenBtn').classList.toggle('active', day === 'even');
       $('oddBtn').classList.toggle('active', day === 'odd');
       const list = current().schedules[day] || [];
       $('classContainer').replaceChildren();
+
       if (!list.length) {
         const empty = document.createElement('div');
         empty.className = 'panel empty';
@@ -257,22 +283,26 @@
         $('classContainer').append(empty);
         return;
       }
+
       list.forEach(cls => {
         const card = document.createElement('article');
         card.className = 'class-card';
         const heading = document.createElement('h2');
         heading.textContent = cls.name;
         card.append(heading);
+
         if (cls.info) {
           const info = document.createElement('p');
           info.className = 'class-info';
           info.textContent = cls.info;
           card.append(info);
         }
+
         const bulletin = document.createElement('div');
         bulletin.className = 'bulletin';
-        const isBulletinLink = /^https?:\/\//i.test((cls.bulletin || '').trim());
-        if (cls.bulletin && !isBulletinLink) {
+        const bulletinUrl = getBulletinUrl(cls.bulletin);
+
+        if (cls.bulletin && !bulletinUrl) {
           const title = document.createElement('strong');
           title.textContent = 'Daily bulletin';
           const body = document.createElement('p');
@@ -280,27 +310,32 @@
           bulletin.append(title, body);
         }
         card.append(bulletin);
+
         const actions = document.createElement('div');
         actions.className = 'class-actions';
-        if (isBulletinLink) {
+
+        if (bulletinUrl) {
           const link = document.createElement('a');
-          link.href = cls.bulletin.trim();
+          link.href = bulletinUrl;
           link.target = '_blank';
           link.rel = 'noreferrer';
           link.textContent = 'View bulletin';
           link.className = 'button-link';
           actions.append(link);
         }
+
         const edit = document.createElement('button');
         edit.type = 'button';
         edit.className = 'secondary';
         edit.textContent = cls.bulletin ? 'Edit bulletin' : 'Add bulletin';
         edit.addEventListener('click', () => openBulletin(cls.id));
         actions.append(edit);
+
         card.append(actions);
         $('classContainer').append(card);
       });
     }
+
     function openBulletin(id) {
       editingClass = id;
       const cls = current().schedules[day].find(item => item.id === id);
@@ -310,10 +345,12 @@
       $('bulletinModal').classList.remove('hidden');
       $('bulletinText').focus();
     }
+
     function closeBulletin() {
       $('bulletinModal').classList.add('hidden');
       editingClass = null;
     }
+
     $('closeModal').addEventListener('click', closeBulletin);
     $('bulletinModal').addEventListener('click', event => {
       if (event.target === $('bulletinModal')) closeBulletin();
@@ -332,6 +369,7 @@
       closeBulletin();
       renderSchedule();
     });
+
     setMode(false);
     chooseImportDay('even');
   </script>

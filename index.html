@@ -106,7 +106,10 @@
         <label class="paste-label" for="scheduleTextEven">Copied <span id="pasteDayLabel">even</span> day schedule</label>
         <textarea id="scheduleTextEven" placeholder="Paste your even day classes here"></textarea>
         <textarea id="scheduleTextOdd" class="hidden" aria-label="Odd day schedule" placeholder="Paste your odd day classes here"></textarea>
-        <div class="actions"><button id="importSchedule" type="button">Save pasted classes</button></div>
+        <div class="actions">
+          <button id="importSchedule" type="button">Save pasted classes</button>
+          <button id="cancelSchedule" class="secondary" type="button">Cancel</button>
+        </div>
         <p id="importError" class="error" role="alert"></p>
       </section>
       <div id="scheduleArea" class="hidden">
@@ -143,6 +146,7 @@
     let importDay = 'even';
     let editingClass = null;
     let signingIn = false;
+    let editorDismissed = false;
 
     function readStore() {
       try {
@@ -197,15 +201,19 @@
         user = {
           salt,
           passwordHash: await hashPassword(password, salt),
-          schedules: { even: [], odd: [] }
+          schedules: { even: [], odd: [] },
+          scheduleDrafts: { even: '', odd: '' }
         };
         db.users[name] = user;
         persist();
       }
 
       currentUser = name;
+      localStorage.setItem('gilman-schedules-session-v1', name);
+      editorDismissed = false;
       $('authView').classList.add('hidden');
       $('appView').classList.remove('hidden');
+      loadScheduleDrafts();
       updateScheduleView();
     });
 
@@ -217,6 +225,7 @@
 
     $('signOut').addEventListener('click', () => {
       currentUser = null;
+      localStorage.removeItem('gilman-schedules-session-v1');
       $('appView').classList.add('hidden');
       $('authView').classList.remove('hidden');
       $('authForm').reset();
@@ -232,7 +241,8 @@
           username: currentUser,
           salt: account.salt,
           passwordHash: account.passwordHash,
-          schedules: account.schedules
+          schedules: account.schedules,
+          scheduleDrafts: account.scheduleDrafts || { even: '', odd: '' }
         }
       };
 
@@ -299,7 +309,11 @@
         db.users[username] = {
           salt: account.salt,
           passwordHash: account.passwordHash,
-          schedules: { even: schedules.even, odd: schedules.odd }
+          schedules: { even: schedules.even, odd: schedules.odd },
+          scheduleDrafts: {
+            even: typeof account.scheduleDrafts?.even === 'string' ? account.scheduleDrafts.even : '',
+            odd: typeof account.scheduleDrafts?.odd === 'string' ? account.scheduleDrafts.odd : ''
+          }
         };
         persist();
 
@@ -371,15 +385,27 @@
       }
 
       Object.assign(current().schedules, updated);
+      for (const [savedDay] of daysToSave) current().scheduleDrafts[savedDay] = '';
       persist();
       $('importError').textContent = '';
       if (pasted.even.trim()) $('scheduleTextEven').value = '';
       if (pasted.odd.trim()) $('scheduleTextOdd').value = '';
+      editorDismissed = true;
       updateScheduleView();
       renderSchedule();
     });
 
+    $('scheduleTextEven').addEventListener('input', saveScheduleDrafts);
+    $('scheduleTextOdd').addEventListener('input', saveScheduleDrafts);
+
+    $('cancelSchedule').addEventListener('click', () => {
+      editorDismissed = true;
+      $('importError').textContent = '';
+      updateScheduleView();
+    });
+
     $('editSchedule').addEventListener('click', () => {
+      editorDismissed = false;
       $('importPanel').classList.remove('hidden');
       $(`scheduleText${importDay[0].toUpperCase()}${importDay.slice(1)}`).focus();
     });
@@ -407,7 +433,25 @@
     }
 
     function current() {
-      return db.users[currentUser];
+      const user = db.users[currentUser];
+      if (user && !user.scheduleDrafts) user.scheduleDrafts = { even: '', odd: '' };
+      return user;
+    }
+
+    function saveScheduleDrafts() {
+      const user = current();
+      if (!user) return;
+      user.scheduleDrafts = {
+        even: $('scheduleTextEven').value,
+        odd: $('scheduleTextOdd').value
+      };
+      persist();
+    }
+
+    function loadScheduleDrafts() {
+      const drafts = current().scheduleDrafts || { even: '', odd: '' };
+      $('scheduleTextEven').value = drafts.even || '';
+      $('scheduleTextOdd').value = drafts.odd || '';
     }
 
     function getBulletinUrl(value) {
@@ -421,15 +465,29 @@
     function updateScheduleView() {
       const schedules = current().schedules;
       const hasAny = (schedules.even || []).length + (schedules.odd || []).length > 0;
-      $('scheduleArea').classList.toggle('hidden', !hasAny);
+      const drafts = current().scheduleDrafts || { even: '', odd: '' };
+      const hasDraft = Boolean(drafts.even || drafts.odd);
+      const showEditor = !editorDismissed && (!hasAny || hasDraft);
 
-      if (hasAny) {
-        $('importPanel').classList.add('hidden');
+      $('scheduleArea').classList.toggle('hidden', !hasAny && !hasDraft && !editorDismissed);
+
+      if (hasAny || hasDraft || editorDismissed) {
+        $('importPanel').classList.toggle('hidden', !showEditor);
         $('editSchedule').classList.remove('hidden');
-        day = (schedules[day] || []).length
-          ? day
-          : ((schedules.even || []).length ? 'even' : 'odd');
-        renderSchedule();
+
+        if (hasAny) {
+          day = (schedules[day] || []).length
+            ? day
+            : ((schedules.even || []).length ? 'even' : 'odd');
+          renderSchedule();
+        } else {
+          const empty = document.createElement('div');
+          empty.className = 'panel empty';
+          empty.textContent = hasDraft
+            ? 'No classes have been saved yet. Your pasted schedule draft is saved. Choose Edit pasted schedule to continue.'
+            : 'No classes have been saved yet. Choose Edit pasted schedule to add your classes.';
+          $('classContainer').replaceChildren(empty);
+        }
       } else {
         $('importPanel').classList.remove('hidden');
         $('editSchedule').classList.add('hidden');
@@ -541,6 +599,18 @@
 
     setMode(true);
     chooseImportDay('even');
+
+    const savedUser = localStorage.getItem('gilman-schedules-session-v1');
+    if (savedUser && db.users[savedUser]) {
+      currentUser = savedUser;
+      editorDismissed = false;
+      $('authView').classList.add('hidden');
+      $('appView').classList.remove('hidden');
+      loadScheduleDrafts();
+      updateScheduleView();
+    } else if (savedUser) {
+      localStorage.removeItem('gilman-schedules-session-v1');
+    }
   </script>
 </body>
 </html>
